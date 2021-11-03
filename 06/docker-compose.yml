@@ -1,0 +1,73 @@
+version: "3.3"
+
+services:
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: OTNmYTdjYmZkMjE5ZmYzODg0MDZiYWJh
+    volumes:
+      - ./data/mongo:/data/db
+      - ./data/mongo-init:/docker-entrypoint-initdb.d
+    ports:
+      - "27017:27017"
+
+  back:
+
+    container_name: app-back
+    build: app-back
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./app-back/:/usr/src/app"
+    links:
+      - database
+
+  database:
+
+    container_name: app-database
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+
+  traefik:
+
+    image: "traefik:v2.5"
+    container_name: "traefik"
+    restart: always
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "./traefik.yml:/etc/traefil/traefik.yml"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+    nodejs:
+        container_name: ${COMPOSE_PROJECT_NAME}_${NODEJS_SERVER_NAME}
+        image: ${NODEJS_CONTAINER_IMAGE}
+        user: ${NODEJS_USER}
+        command: ${NODEJS_COMMAND}
+        ports:
+            - "4040:4040"
+        environment:
+            NODE_ENV: ${NODEJS_ENV}
+        volumes:
+            - ${PWD}:/home/node/project
+        working_dir: /home/node/project
+        networks:
+            app_net:
+                ipv4_address: ${IP_NODE_SERVER}
+
+#networks:
+#    app_net:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                -   subnet: ${IP_SUBNET}            
+    
